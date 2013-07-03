@@ -220,8 +220,14 @@ class SkipJackTest < Test::Unit::TestCase
 
   def test_dont_send_blank_state
     @billing_address[:state] = nil
+    @shipping_address[:state] = nil
     @options[:billing_address] = @billing_address
-    @gateway.expects(:ssl_post).with { |url, params| url == 'https://developer.skipjackic.com/scripts/evolvcc.dll?AuthorizeAPI'; 'XX' == CGI.parse(params)['State'].first }.returns(successful_authorization_response)
+    @options[:shipping_address] = @shipping_address
+    @gateway.expects(:ssl_post).with do |url, params|
+      assert_equal 'https://developer.skipjackic.com/scripts/evolvcc.dll?AuthorizeAPI', url
+      assert_equal 'XX', CGI.parse(params)['State'].first
+      assert_equal 'XX', CGI.parse(params)['ShipToState'].first
+    end.returns(successful_authorization_response)
 
     assert response = @gateway.authorize(@amount, @credit_card, @options)
   end
