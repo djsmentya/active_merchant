@@ -1,3 +1,5 @@
+require 'json'
+require File.dirname(__FILE__) + '/stripe/stripe_response'
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
     class StripeGateway < Gateway
@@ -102,7 +104,38 @@ module ActiveMerchant #:nodoc:
         commit(:delete, "customers/#{CGI.escape(customer_id)}", nil, meta)
       end
 
+      def recurring(options = {})
+          requires!(options, :plan)
+          requires!(options, :customer_id)
+
+          post = create_post_for_recurring(options)
+          meta = generate_meta(options)
+
+          commit(:post, "customers/#{CGI.escape(options[:customer_id])}/subscription", post, meta)
+
+      end
+
+      def cancel_recurring(options = {})
+          requires!(options, :customer_id)
+
+          meta = generate_meta(options)
+          commit(:delete, "customers/#{CGI.escape(options[:customer_id])}/subscription", nil, meta)
+      end
+
       private
+
+      def create_post_for_recurring(options)
+        post = {}
+        add_plan(post,  options)
+        post
+      end
+
+      def add_plan(post, options)
+        if options[:plan].kind_of?(String)
+            post[:plan] = options[:plan]
+        end
+      end
+
 
       def create_post_for_auth_or_purchase(money, creditcard, options)
         post = {}
@@ -126,8 +159,8 @@ module ActiveMerchant #:nodoc:
       end
 
       def add_customer_data(post, options)
-        metadata_options = [:description,:browser_ip,:user_agent,:referrer]
-        post.update(options.slice(*metadata_options))
+        #metadata_options = [:description,:browser_ip,:user_agent,:referrer]
+        #post.update(options.slice(*metadata_options))
 
         post[:external_id] = options[:order_id]
         post[:payment_user_agent] = "Stripe/v1 ActiveMerchantBindings/#{ActiveMerchant::VERSION}"
@@ -238,7 +271,7 @@ module ActiveMerchant #:nodoc:
         card = response["card"] || response["active_card"] || {}
         avs_code = AVS_CODE_TRANSLATOR["line1: #{card["address_line1_check"]}, zip: #{card["address_zip_check"]}"]
         cvc_code = CVC_CODE_TRANSLATOR[card["cvc_check"]]
-        Response.new(success,
+        StripeResponse.new(success,
           success ? "Transaction approved" : response["error"]["message"],
           response,
           :test => response.has_key?("livemode") ? !response["livemode"] : false,

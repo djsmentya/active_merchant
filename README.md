@@ -1,3 +1,5 @@
+## It is not official repository and it hasn't community support.  This repo has additional methods for recurring payment in  StripeGateway. Please look https://github.com/Shopify/active_merchant
+
 # Active Merchant
 
 Active Merchant is an extraction from the e-commerce system [Shopify](http://www.shopify.com).
