@@ -1,5 +1,4 @@
 require 'json'
-require File.dirname(__FILE__) + '/stripe/stripe_response'
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
     class StripeGateway < Gateway
